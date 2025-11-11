@@ -1,33 +1,9 @@
-select title, rental_rate from film where title = 'TRAIN BUNCH' 
-or title = 'MIXED DOORS' or title = 'FREEDOM CLEOPATRA'
-or title = 'HARDLY ROBBERS'
-or title =  'BRAVEHEART HUMAN'
-order by rental_rate;
 
 
-select title, sum(amount) from rental r 
-join inventory i on i.inventory_id = r.inventory_id
-join film f on f.film_id = i.film_id
-join payment p on p.rental_id = r.rental_id
-group by title
-order by sum(amount) desc
-;
-
--- Maximum store revenue in 2017
-SELECT MAX(store_revenue) AS max_revenue_2017
-FROM (
-  SELECT i.store_id,
-         ROUND(SUM(p.amount), 2) AS store_revenue
-  FROM inventory i
-  JOIN rental   r ON r.inventory_id = i.inventory_id
-  JOIN payment  p ON p.rental_id    = r.rental_id
-  WHERE EXTRACT(YEAR FROM p.payment_date) = 2017
-  GROUP BY i.store_id
-) t;
-
-
-
--- 1 
+--1 
+-- The marketing team needs a list of animation movies between 2017 and 2019 to 
+-- promote family-friendly content in an upcoming season in stores. Show all animation 
+-- movies released during this period with rate more than 1, sorted alphabetically
 SELECT f.title
 FROM film AS f
 JOIN film_category AS fc ON fc.film_id = f.film_id
@@ -37,8 +13,10 @@ WHERE c.name = 'Animation'
   AND f.rental_rate > 1
 ORDER BY f.title;
 
-
--- 2
+--2 
+-- The finance department requires a report on store performance to assess profitability and plan 
+-- resource allocation for stores after March 2017. Calculate the revenue earned by each rental store 
+-- after March 2017 (since April) (include columns: address and address2 – as one column, revenue)
 SELECT i.store_id,
        CONCAT_WS(' ', a.address, a.address2) AS store_address,
        ROUND(SUM(p.amount), 2)              AS revenue
@@ -51,7 +29,10 @@ WHERE p.payment_date >= DATE '2017-04-01'
 GROUP BY i.store_id, CONCAT_WS(' ', a.address, a.address2)
 ORDER BY revenue DESC;
 
--- 3
+--3
+-- The marketing department in our stores aims to identify the most successful actors since 2015 to 
+-- boost customer interest in their films. Show top-5 actors by number of movies (released after 2015) 
+-- they took part in (columns: first_name, last_name, number_of_movies, sorted by number_of_movies in descending order)
 SELECT a.first_name,
        a.last_name,
        COUNT(DISTINCT fa.film_id) AS number_of_movies
@@ -64,6 +45,10 @@ ORDER BY number_of_movies DESC, a.last_name, a.first_name
 LIMIT 5;
 
 -- 4
+--The marketing team needs to track the production trends of Drama, Travel, and Documentary films to 
+-- inform genre-specific marketing strategies. Show number of Drama, Travel, Documentary per year 
+-- (include columns: release_year, number_of_drama_movies, number_of_travel_movies, number_of_documentary_movies),
+-- sorted by release year in descending order. Dealing with NULL values is encouraged)
 SELECT f.release_year,
        COALESCE(SUM(CASE WHEN c.name = 'Drama'        THEN 1 END), 0) AS number_of_drama_movies,
        COALESCE(SUM(CASE WHEN c.name = 'Travel'       THEN 1 END), 0) AS number_of_travel_movies,
@@ -78,6 +63,10 @@ ORDER BY f.release_year DESC;
 
 
 -- 2.1
+-- The HR department aims to reward top-performing employees in 2017 
+-- with bonuses to recognize their contribution to stores revenue. 
+-- Show which three employees generated the most revenue in 2017? 
+
 
 WITH p17 AS (
   SELECT
@@ -120,6 +109,10 @@ LIMIT 3;
 
 
 -- 2.2
+-- The management team wants to identify the most popular movies and their target audience age groups 
+-- to optimize marketing efforts. Show which 5 movies were rented more than others (number of rentals), 
+-- and what's the expected age of the audience for these movies? To determine expected age please use 
+-- 'Motion Picture Association film rating system'
 
 -- Top 5 most-rented films + expected audience age (MPAA)
 SELECT
@@ -143,6 +136,12 @@ LIMIT 5;
 
 
 -- 3.v1
+-- The stores’ marketing team wants to analyze actors' inactivity periods to select those with notable 
+-- career breaks for targeted promotional campaigns, highlighting their comebacks or consistent appearances
+-- to engage customers with nostalgic or reliable film stars
+
+-- V1: gap between the latest release_year and current year per each actor;
+
 
 WITH actor_last_film AS (
     SELECT 
@@ -168,6 +167,11 @@ LIMIT 10;
 
 -- 3.v2
 
+-- The stores’ marketing team wants to analyze actors' inactivity periods to select those with notable 
+-- career breaks for targeted promotional campaigns, highlighting their comebacks or consistent appearances
+-- to engage customers with nostalgic or reliable film stars
+
+-- V2: gaps between sequential films per each actor; 
 WITH actor_films AS (
     SELECT
         a.actor_id,

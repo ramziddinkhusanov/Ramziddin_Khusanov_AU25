@@ -172,6 +172,7 @@ LIMIT 10;
 -- to engage customers with nostalgic or reliable film stars
 
 -- V2: gaps between sequential films per each actor; 
+-- Updates made here 
 WITH actor_films AS (
     SELECT
         a.actor_id,
@@ -184,12 +185,20 @@ WITH actor_films AS (
 ),
 ordered_films AS (
     SELECT
-        actor_id,
-        first_name,
-        last_name,
-        release_year,
-        LAG(release_year) OVER (PARTITION BY actor_id ORDER BY release_year) AS prev_year
-    FROM actor_films
+        af.actor_id,
+        af.first_name,
+        af.last_name,
+        af.release_year,
+        MAX(af_prev.release_year) AS prev_year
+    FROM actor_films af
+    LEFT JOIN actor_films af_prev
+        ON af_prev.actor_id = af.actor_id
+       AND af_prev.release_year < af.release_year
+    GROUP BY
+        af.actor_id,
+        af.first_name,
+        af.last_name,
+        af.release_year
 ),
 gaps AS (
     SELECT
@@ -210,6 +219,7 @@ FROM gaps
 GROUP BY actor_id, first_name, last_name
 ORDER BY max_inactivity_gap DESC
 LIMIT 10;
+
 
 
 
